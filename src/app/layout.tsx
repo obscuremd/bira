@@ -1,0 +1,91 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/themeProvider/ThemeProvider";
+import { ClerkProvider } from "@clerk/nextjs";
+import { app } from "@/services/firebaseconfig";
+import { GeneralProvider } from "@/Providers/GeneralContextProvider";
+import { HeroUIProvider } from "@heroui/system";
+import { Toaster } from "react-hot-toast";
+
+console.log("[Firebase initialized]", app.name);
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Daniel",
+  description: "Your dream job solution",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <Toaster
+          toastOptions={{
+            success: {
+              style: {
+                background: "#014421", // deep green
+                color: "white",
+                border: "1px solid #00ffcc",
+              },
+              iconTheme: {
+                primary: "#00ffcc",
+                secondary: "#014421",
+              },
+            },
+            error: {
+              style: {
+                background: "#330000", // deep red
+                color: "white",
+                border: "1px solid #ff6666",
+              },
+              iconTheme: {
+                primary: "#ff6666",
+                secondary: "#330000",
+              },
+            },
+            loading: {
+              style: {
+                background: "#1a1a3d", // deep blue
+                color: "white",
+                border: "1px solid #3399ff",
+              },
+              iconTheme: {
+                primary: "#3399ff",
+                secondary: "#1a1a3d",
+              },
+            },
+          }}
+        />
+        <HeroUIProvider>
+          <ClerkProvider>
+            <GeneralProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+              </ThemeProvider>
+            </GeneralProvider>
+          </ClerkProvider>
+        </HeroUIProvider>
+      </body>
+    </html>
+  );
+}
