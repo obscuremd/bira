@@ -6,14 +6,10 @@ import NavMenu from "@/components/localComponents/NavMenu";
 import GradientButton from "@/components/localComponents/GradientButton";
 import { SignUpButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import {
-  LandingPageMenuItems,
-  testimonials,
-  TimelineData,
-} from "@/Exports/data";
-import { GlowingEffectDemo } from "@/components/localComponents/GridItem";
-import { Timeline } from "@/components/localComponents/Timeline";
-import { AnimatedTestimonials } from "@/components/localComponents/AnimatedTestimonials";
+import { LandingPageMenuItems } from "@/Exports/data";
+import Post from "@/components/localComponents/Post";
+import { Skeleton } from "@/components/ui/skeleton";
+import axios from "axios";
 
 export default function Home() {
   const { isSignedIn } = useUser();
@@ -21,6 +17,44 @@ export default function Home() {
 
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [Posts, setPosts] = useState<Post[]>([]);
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchPosts = async (pageNumber = 1) => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`/api/post?page=${pageNumber}&limit=10`);
+      console.log("response", res);
+
+      if (res.status === 200) {
+        const newPosts = res.data.jobs;
+        setPosts((prevPosts) =>
+          pageNumber === 1 ? newPosts : [...prevPosts, ...newPosts]
+        );
+        setPage(res.data.page);
+        setTotalPages(res.data.totalPages);
+      }
+    } catch (err) {
+      console.error("Error fetching posts:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts(1); // Initial load
+  }, []);
+
+  // Load more handler
+  const handleLoadMore = () => {
+    if (page < totalPages) {
+      fetchPosts(page + 1);
+    }
+  };
 
   useEffect(() => {
     // Redirect if signed in
@@ -108,9 +142,40 @@ export default function Home() {
           <Button variant={"default"}>Read More</Button>
         </div>
       </header>
-      <GlowingEffectDemo />
-      <Timeline data={TimelineData} />
-      <AnimatedTestimonials testimonials={testimonials} />
+      {/* Posts */}
+      <div className="flex flex-wrap gap-2">
+        {loading && Posts.length === 0 ? (
+          <>
+            <Skeleton className="w-[256px] h-14" />
+            <Skeleton className="w-[256px] h-14" />
+            <Skeleton className="w-[256px] h-14" />
+          </>
+        ) : Posts?.length === 0 ? (
+          <div className="text-sm text-zinc-400">No Posts Found</div>
+        ) : (
+          Posts.map((item, index) => (
+            <Post
+              image={item.image}
+              key={index}
+              title={item.title}
+              companyName={item.companyName}
+              applicationDeadline={item.applicationDeadline}
+              careerLevel={item.careerLevel}
+              description={item.description}
+              jobType={item.jobType}
+              location={item.location}
+              workSetup={item.workSetup}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Load More Button */}
+      {page < totalPages && (
+        <Button onClick={handleLoadMore} disabled={loading} className="mt-4">
+          {loading ? "Loading..." : "Load More"}
+        </Button>
+      )}
     </main>
   );
 }
